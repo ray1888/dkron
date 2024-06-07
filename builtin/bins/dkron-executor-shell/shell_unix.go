@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"os/user"
 	"strconv"
@@ -16,6 +17,7 @@ import (
 	"time"
 
 	"github.com/armon/circbuf"
+
 	dkplugin "github.com/distribworks/dkron/v3/plugin"
 	dktypes "github.com/distribworks/dkron/v3/plugin/types"
 )
@@ -60,6 +62,12 @@ func (s *Shell) ExecuteImpl(args *dktypes.ExecuteRequest, cb dkplugin.StatusHelp
 	env := strings.Split(args.Config["env"], ",")
 	cwd := args.Config["cwd"]
 
+	localWrite, err := strconv.ParseBool(args.Config["local_write"])
+	if err != nil {
+		shell = false
+	}
+	logFile := args.Config["log_base_path"] + "/" + args.JobName + "-" + "asdsa"
+
 	executionInfo := strings.Split(fmt.Sprintf("ENV_JOB_NAME=%s", args.JobName), ",")
 	env = append(env, executionInfo...)
 
@@ -72,8 +80,19 @@ func (s *Shell) ExecuteImpl(args *dktypes.ExecuteRequest, cb dkplugin.StatusHelp
 		return nil, err
 	}
 	// use same buffer for both channels, for the full return at the end
-	cmd.Stderr = reportingWriter{buffer: output, cb: cb, isError: true}
-	cmd.Stdout = reportingWriter{buffer: output, cb: cb}
+	var outfile *os.File
+
+	if localWrite {
+		outfile, err := os.Create(logFile)
+		if err != nil {
+			return nil, err
+		}
+		cmd.Stderr = reportingWriter{buffer: output, cb: cb, isError: true, localWrite: localWrite, fileWriter: outfile}
+		cmd.Stdout = reportingWriter{buffer: output, cb: cb, localWrite: localWrite, fileWriter: outfile}
+	} else {
+		cmd.Stderr = reportingWriter{buffer: output, cb: cb, isError: true, localWrite: localWrite}
+		cmd.Stdout = reportingWriter{buffer: output, cb: cb, localWrite: localWrite}
+	}
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -134,6 +153,10 @@ func (s *Shell) ExecuteImpl(args *dktypes.ExecuteRequest, cb dkplugin.StatusHelp
 	err = cmd.Wait()
 	quit <- cmd.ProcessState.ExitCode()
 	close(quit) // exit metric refresh goroutine after job is finished
+
+	if localWrite {
+		outfile.Close()
+	}
 
 	if jobTimedOut {
 		_, err := output.Write([]byte(jobTimeoutMessage))
