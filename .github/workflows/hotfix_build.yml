@@ -2,9 +2,8 @@ name: Hotfix
 
 on:
   push:
-    
     tags:
-      - 'hotfix*'
+      - 'main'
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
