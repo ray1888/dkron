@@ -2,14 +2,16 @@ package main
 
 import (
 	"errors"
+	"io"
 	"os"
 	"os/exec"
 	"runtime"
 
 	"github.com/armon/circbuf"
+	"github.com/mattn/go-shellwords"
+
 	dkplugin "github.com/distribworks/dkron/v3/plugin"
 	dktypes "github.com/distribworks/dkron/v3/plugin/types"
-	"github.com/mattn/go-shellwords"
 )
 
 const (
@@ -23,12 +25,18 @@ const (
 
 // reportingWriter This is a Writer implementation that writes back to the host
 type reportingWriter struct {
-	buffer  *circbuf.Buffer
-	cb      dkplugin.StatusHelper
-	isError bool
+	buffer     *circbuf.Buffer
+	cb         dkplugin.StatusHelper
+	isError    bool
+	localWrite bool
+	fileWriter io.Writer
 }
 
 func (p reportingWriter) Write(data []byte) (n int, err error) {
+	if p.localWrite {
+		p.fileWriter.Write(data)
+		return
+	}
 	p.cb.Update(data, p.isError)
 	return p.buffer.Write(data)
 }
