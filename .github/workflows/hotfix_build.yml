@@ -2,8 +2,10 @@ name: Hotfix
 
 on:
   push:
-    tags:
-      - 'main'
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
