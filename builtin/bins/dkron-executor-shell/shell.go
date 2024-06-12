@@ -34,8 +34,7 @@ type reportingWriter struct {
 
 func (p reportingWriter) Write(data []byte) (n int, err error) {
 	if p.localWrite {
-		p.fileWriter.Write(data)
-		return
+		return p.fileWriter.Write(data)
 	}
 	p.cb.Update(data, p.isError)
 	return p.buffer.Write(data)

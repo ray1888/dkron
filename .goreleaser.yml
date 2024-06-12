@@ -11,16 +11,10 @@ builds:
     env:
       - CGO_ENABLED=0
     goos:
-      - freebsd
-      - windows
-      - darwin
       - linux
     goarch:
       - amd64
       - arm64
-      - arm
-    goarm:
-      - '7'
     ldflags:
       - -s -w
 
@@ -141,7 +135,7 @@ dockers:
       - --platform=linux/amd64
 
   - image_templates:
-      - dkron/{{ .ProjectName }}:{{ .Version }}-arm64
+      - yunguankongjian-test/dkron/{{ .ProjectName }}:{{ .Version }}-arm64
     dockerfile: Dockerfile.release
     use: buildx
     goos: linux
@@ -151,7 +145,7 @@ dockers:
       - --platform=linux/arm64/v8
 
   - image_templates:
-      - dkron/{{ .ProjectName }}:{{ .Version }}-armv7
+      - yunguankongjian-test/dkron/{{ .ProjectName }}:{{ .Version }}-armv7
     dockerfile: Dockerfile.release
     use: buildx
     goos: linux
@@ -162,17 +156,17 @@ dockers:
       - --platform=linux/arm/v7
 
 docker_manifests:
-  - name_template: dkron/{{ .ProjectName }}:{{ .Version }}
+  - name_template: yunguankongjian-test/dkron/{{ .ProjectName }}:{{ .Version }}
     image_templates:
-      - dkron/{{ .ProjectName }}:{{ .Version }}-amd64
-      - dkron/{{ .ProjectName }}:{{ .Version }}-arm64
-      - dkron/{{ .ProjectName }}:{{ .Version }}-armv7
+      - yunguankongjian-test/dkron/{{ .ProjectName }}:{{ .Version }}-amd64
+      - yunguankongjian-test/dkron/{{ .ProjectName }}:{{ .Version }}-arm64
+      - yunguankongjian-test/dkron/{{ .ProjectName }}:{{ .Version }}-armv7
 
-  - name_template: dkron/{{ .ProjectName }}:latest
+  - name_template: yunguankongjian-test/dkron/{{ .ProjectName }}:latest
     image_templates:
-    - dkron/{{ .ProjectName }}:{{ .Version }}-amd64
-    - dkron/{{ .ProjectName }}:{{ .Version }}-arm64
-    - dkron/{{ .ProjectName }}:{{ .Version }}-armv7
+    - yunguankongjian-test/dkron/{{ .ProjectName }}:{{ .Version }}-amd64
+    - yunguankongjian-test/dkron/{{ .ProjectName }}:{{ .Version }}-arm64
+    - yunguankongjian-test/dkron/{{ .ProjectName }}:{{ .Version }}-armv7
 
 changelog:
   sort: asc

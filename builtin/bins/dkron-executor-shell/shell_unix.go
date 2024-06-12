@@ -66,7 +66,9 @@ func (s *Shell) ExecuteImpl(args *dktypes.ExecuteRequest, cb dkplugin.StatusHelp
 	if err != nil {
 		shell = false
 	}
-	logFile := args.Config["log_base_path"] + "/" + args.JobName + "-" + "asdsa"
+
+	logFile := args.Config["log_base_path"] + "/" + args.JobName + "-" + strconv.FormatInt(time.Now().Unix(), 10)
+	errlogFile := args.Config["log_base_path"] + "/" + args.JobName + "-err-" + strconv.FormatInt(time.Now().Unix(), 10)
 
 	executionInfo := strings.Split(fmt.Sprintf("ENV_JOB_NAME=%s", args.JobName), ",")
 	env = append(env, executionInfo...)
@@ -81,17 +83,27 @@ func (s *Shell) ExecuteImpl(args *dktypes.ExecuteRequest, cb dkplugin.StatusHelp
 	}
 	// use same buffer for both channels, for the full return at the end
 	var outfile *os.File
+	var outErrFile *os.File
 
 	if localWrite {
 		outfile, err := os.Create(logFile)
 		if err != nil {
 			return nil, err
 		}
-		cmd.Stderr = reportingWriter{buffer: output, cb: cb, isError: true, localWrite: localWrite, fileWriter: outfile}
+		outErrFile, err := os.Create(errlogFile)
+		if err != nil {
+			return nil, err
+		}
+		cmd.Stderr = reportingWriter{buffer: output, cb: cb, isError: true, localWrite: localWrite, fileWriter: outErrFile}
 		cmd.Stdout = reportingWriter{buffer: output, cb: cb, localWrite: localWrite, fileWriter: outfile}
 	} else {
 		cmd.Stderr = reportingWriter{buffer: output, cb: cb, isError: true, localWrite: localWrite}
 		cmd.Stdout = reportingWriter{buffer: output, cb: cb, localWrite: localWrite}
+	}
+
+	if localWrite {
+		defer outfile.Close()
+		defer outErrFile.Close()
 	}
 
 	stdin, err := cmd.StdinPipe()
@@ -154,12 +166,19 @@ func (s *Shell) ExecuteImpl(args *dktypes.ExecuteRequest, cb dkplugin.StatusHelp
 	quit <- cmd.ProcessState.ExitCode()
 	close(quit) // exit metric refresh goroutine after job is finished
 
-	if localWrite {
-		outfile.Close()
-	}
-
 	if jobTimedOut {
 		_, err := output.Write([]byte(jobTimeoutMessage))
+		if err != nil {
+			log.Printf("Error writing output on timeout event: %v", err)
+		}
+	}
+
+	if localWrite {
+		logMessage := fmt.Sprintf("Please check in agent container to check actual output, file is %s , err file is %s",
+			logFile,
+			errlogFile,
+		)
+		_, err := output.Write([]byte(logMessage))
 		if err != nil {
 			log.Printf("Error writing output on timeout event: %v", err)
 		}
