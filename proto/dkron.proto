@@ -133,6 +133,43 @@ message GetActiveExecutionsResponse {
   repeated Execution executions = 1;
 }
 
+message AuthLoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message AuthLoginResponse {
+  bool success = 1;
+  string msg = 2;
+}
+
+message AuthLogoutRequest {
+  string username = 1;
+}
+
+message AuthLoginResponse {
+  bool success = 1;
+  string msg = 2;
+}
+
+enum UserAction {
+  Add = 1;
+  Delete = 2;
+  Update = 3;
+}
+
+message UserModifyRequest{
+  string username = 1;
+  string password = 2;
+  UserAction action = 3;
+}
+
+message UserModifyResponse{
+  bool success = 1;
+  string msg = 2;
+}
+
+
 service Dkron {
   rpc GetJob (GetJobRequest) returns (GetJobResponse);
   rpc ExecutionDone (ExecutionDoneRequest) returns (ExecutionDoneResponse);
