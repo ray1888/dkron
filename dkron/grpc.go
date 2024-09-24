@@ -431,7 +431,7 @@ func (grpcs *GRPCServer) Login(ctx context.Context, execution *proto.AuthLoginRe
 		"execution": execution.GetUsername(),
 	}).Debug("grpc: Received SetExecution")
 
-	cmd, err := Encode(SetExecutionType, execution)
+	cmd, err := Encode(SetSessionType, execution)
 	if err != nil {
 		grpcs.logger.WithError(err).Fatal("agent: encode error in SetExecution")
 		return nil, err
@@ -451,7 +451,7 @@ func (grpcs *GRPCServer) Logout(ctx context.Context, execution *proto.AuthLogout
 		"execution": execution.GetUsername(),
 	}).Debug("grpc: Received SetExecution")
 
-	cmd, err := Encode(SetExecutionType, execution)
+	cmd, err := Encode(SetSessionType, execution)
 	if err != nil {
 		grpcs.logger.WithError(err).Fatal("agent: encode error in SetExecution")
 		return nil, err
@@ -471,7 +471,7 @@ func (grpcs *GRPCServer) UserAction(ctx context.Context, execution *proto.UserMo
 		"execution": execution.GetUsername(),
 	}).Debug("grpc: Received SetExecution")
 
-	cmd, err := Encode(SetExecutionType, execution)
+	cmd, err := Encode(UserType, execution)
 	if err != nil {
 		grpcs.logger.WithError(err).Fatal("agent: encode error in SetExecution")
 		return nil, err

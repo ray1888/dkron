@@ -3,10 +3,11 @@ package dkron
 import (
 	"io"
 
-	dkronpb "github.com/distribworks/dkron/v3/plugin/types"
 	"github.com/hashicorp/raft"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
+
+	dkronpb "github.com/distribworks/dkron/v3/plugin/types"
 )
 
 // MessageType is the type to encode FSM commands.
@@ -24,6 +25,10 @@ const (
 	// ExecutionDoneType is the command to perform the logic needed once an execution
 	// is done.
 	ExecutionDoneType
+	// Users Session
+	SetSessionType
+	// user
+	UserType
 )
 
 // LogApplier is the definition of a function that can apply a Raft log
@@ -66,6 +71,10 @@ func (d *dkronFSM) Apply(l *raft.Log) interface{} {
 		return d.applyExecutionDone(buf[1:])
 	case SetExecutionType:
 		return d.applySetExecution(buf[1:])
+	case SetSessionType:
+		return d.applySetSession(buf[1:])
+	case UserType:
+		return d.applySetUser(buf[1:])
 	}
 
 	// Check enterprise only message types.
@@ -116,6 +125,32 @@ func (d *dkronFSM) applyExecutionDone(buf []byte) interface{} {
 }
 
 func (d *dkronFSM) applySetExecution(buf []byte) interface{} {
+	var pbex dkronpb.Execution
+	if err := proto.Unmarshal(buf, &pbex); err != nil {
+		return err
+	}
+	execution := NewExecutionFromProto(&pbex)
+	key, err := d.store.SetExecution(execution)
+	if err != nil {
+		return err
+	}
+	return key
+}
+
+func (d *dkronFSM) applySetSession(buf []byte) interface{} {
+	var pbex dkronpb.Execution
+	if err := proto.Unmarshal(buf, &pbex); err != nil {
+		return err
+	}
+	execution := NewExecutionFromProto(&pbex)
+	key, err := d.store.SetExecution(execution)
+	if err != nil {
+		return err
+	}
+	return key
+}
+
+func (d *dkronFSM) applySetUser(buf []byte) interface{} {
 	var pbex dkronpb.Execution
 	if err := proto.Unmarshal(buf, &pbex); err != nil {
 		return err
