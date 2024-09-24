@@ -127,7 +127,7 @@ func (h *HTTPTransport) APIRoutes(r *gin.RouterGroup, middleware ...gin.HandlerF
 	auth := v1.Group("/auth")
 	auth.POST("/login", h.loginHandler)
 	auth.POST("/logout", h.logoutHandler)
-	auth.POST("/init", h.initHandler)
+	// auth.POST("/init", h.initHandler)
 }
 
 // MetaMiddleware adds middleware to the gin Context.

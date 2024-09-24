@@ -5,14 +5,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/distribworks/dkron/v3/ntime"
-	"github.com/distribworks/dkron/v3/plugin"
-	proto "github.com/distribworks/dkron/v3/plugin/types"
 	"github.com/hashicorp/serf/testutil"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+
+	"github.com/distribworks/dkron/v3/ntime"
+	"github.com/distribworks/dkron/v3/plugin"
+	proto "github.com/distribworks/dkron/v3/plugin/types"
 )
 
 func getTestLogger() *logrus.Entry {
@@ -205,6 +206,9 @@ func (gRPCClientMock) RunJob(s string) (*Job, error)              { return nil, 
 func (gRPCClientMock) RaftGetConfiguration(s string) (*proto.RaftGetConfigurationResponse, error) {
 	return nil, nil
 }
+func (gRPCClientMock) Login(username, password string) error
+func (gRPCClientMock) Logout(username string) error
+
 func (gRPCClientMock) RaftRemovePeerByID(s string, a string) error { return nil }
 func (gRPCClientMock) GetActiveExecutions(s string) ([]*proto.Execution, error) {
 	return []*proto.Execution{

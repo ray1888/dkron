@@ -9,8 +9,6 @@ import (
 	"time"
 
 	metrics "github.com/armon/go-metrics"
-	"github.com/distribworks/dkron/v3/plugin"
-	proto "github.com/distribworks/dkron/v3/plugin/types"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/raft"
 	"github.com/hashicorp/serf/serf"
@@ -18,6 +16,9 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	pb "google.golang.org/protobuf/proto"
+
+	"github.com/distribworks/dkron/v3/plugin"
+	proto "github.com/distribworks/dkron/v3/plugin/types"
 )
 
 var (
@@ -422,4 +423,64 @@ func (grpcs *GRPCServer) SetExecution(ctx context.Context, execution *proto.Exec
 	}
 
 	return new(empty.Empty), nil
+}
+
+func (grpcs *GRPCServer) Login(ctx context.Context, execution *proto.AuthLoginRequest) (*proto.AuthLoginResponse, error) {
+	defer metrics.MeasureSince([]string{"grpc", "set_execution"}, time.Now())
+	grpcs.logger.WithFields(logrus.Fields{
+		"execution": execution.GetUsername(),
+	}).Debug("grpc: Received SetExecution")
+
+	cmd, err := Encode(SetExecutionType, execution)
+	if err != nil {
+		grpcs.logger.WithError(err).Fatal("agent: encode error in SetExecution")
+		return nil, err
+	}
+	af := grpcs.agent.raft.Apply(cmd, raftTimeout)
+	if err := af.Error(); err != nil {
+		grpcs.logger.WithError(err).Fatal("agent: error applying SetExecutionType")
+		return nil, err
+	}
+
+	return new(proto.AuthLoginResponse), nil
+}
+
+func (grpcs *GRPCServer) Logout(ctx context.Context, execution *proto.AuthLogoutRequest) (*proto.AuthLogoutResponse, error) {
+	defer metrics.MeasureSince([]string{"grpc", "set_execution"}, time.Now())
+	grpcs.logger.WithFields(logrus.Fields{
+		"execution": execution.GetUsername(),
+	}).Debug("grpc: Received SetExecution")
+
+	cmd, err := Encode(SetExecutionType, execution)
+	if err != nil {
+		grpcs.logger.WithError(err).Fatal("agent: encode error in SetExecution")
+		return nil, err
+	}
+	af := grpcs.agent.raft.Apply(cmd, raftTimeout)
+	if err := af.Error(); err != nil {
+		grpcs.logger.WithError(err).Fatal("agent: error applying SetExecutionType")
+		return nil, err
+	}
+
+	return new(proto.AuthLogoutResponse), nil
+}
+
+func (grpcs *GRPCServer) UserAction(ctx context.Context, execution *proto.UserModifyRequest) (*proto.UserModifyResponse, error) {
+	defer metrics.MeasureSince([]string{"grpc", "set_execution"}, time.Now())
+	grpcs.logger.WithFields(logrus.Fields{
+		"execution": execution.GetUsername(),
+	}).Debug("grpc: Received SetExecution")
+
+	cmd, err := Encode(SetExecutionType, execution)
+	if err != nil {
+		grpcs.logger.WithError(err).Fatal("agent: encode error in SetExecution")
+		return nil, err
+	}
+	af := grpcs.agent.raft.Apply(cmd, raftTimeout)
+	if err := af.Error(); err != nil {
+		grpcs.logger.WithError(err).Fatal("agent: error applying SetExecutionType")
+		return nil, err
+	}
+
+	return new(proto.UserModifyResponse), nil
 }
