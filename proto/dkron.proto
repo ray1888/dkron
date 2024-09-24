@@ -147,15 +147,15 @@ message AuthLogoutRequest {
   string username = 1;
 }
 
-message AuthLoginResponse {
+message AuthLogoutResponse {
   bool success = 1;
   string msg = 2;
 }
 
 enum UserAction {
-  Add = 1;
-  Delete = 2;
-  Update = 3;
+  Add = 0;
+  Delete = 1;
+  Update = 2;
 }
 
 message UserModifyRequest{
@@ -182,6 +182,9 @@ service Dkron {
   rpc RaftRemovePeerByID (RaftRemovePeerByIDRequest) returns (google.protobuf.Empty);
   rpc GetActiveExecutions (google.protobuf.Empty) returns  (GetActiveExecutionsResponse);
   rpc SetExecution (Execution) returns (google.protobuf.Empty);
+  rpc Login (AuthLoginRequest) returns (AuthLoginResponse);
+  rpc Logout (AuthLogoutRequest) returns (AuthLogoutResponse);
+  rpc UserAction(UserModifyRequest) returns (UserModifyResponse);
 }
 
 message AgentRunRequest {
