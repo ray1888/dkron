@@ -105,7 +105,6 @@ func (h *HTTPTransport) APIRoutes(r *gin.RouterGroup, middleware ...gin.HandlerF
 	v1.GET("/isleader", h.isLeaderHandler)
 	v1.POST("/leave", h.leaveHandler)
 	v1.POST("/restore", h.restoreHandler)
-
 	v1.GET("/busy", h.busyHandler)
 
 	v1.POST("/jobs", h.jobCreateOrUpdateHandler)
@@ -124,6 +123,11 @@ func (h *HTTPTransport) APIRoutes(r *gin.RouterGroup, middleware ...gin.HandlerF
 	jobs.GET("/:job", h.jobGetHandler)
 	jobs.GET("/:job/executions", h.executionsHandler)
 	jobs.GET("/:job/executions/:execution", h.executionHandler)
+	// Login Related
+	auth := v1.Group("/auth")
+	auth.POST("/login", h.loginHandler)
+	auth.POST("/logout", h.logoutHandler)
+	auth.POST("/init", h.initHandler)
 }
 
 // MetaMiddleware adds middleware to the gin Context.
@@ -509,4 +513,70 @@ func (h *HTTPTransport) busyHandler(c *gin.Context) {
 
 	c.Header("X-Total-Count", strconv.Itoa(len(executions)))
 	renderJSON(c, http.StatusOK, executions)
+}
+
+func (h *HTTPTransport) loginHandler(c *gin.Context) {
+	jobName := c.Param("job")
+
+	job, err := h.agent.Store.GetJob(jobName, nil)
+	if err != nil {
+		_ = c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
+
+	// Toggle job status
+	job.Disabled = !job.Disabled
+
+	// Call gRPC SetJob
+	if err := h.agent.GRPCClient.SetJob(job); err != nil {
+		_ = c.AbortWithError(http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	c.Header("Location", c.Request.RequestURI)
+	renderJSON(c, http.StatusOK, job)
+}
+
+func (h *HTTPTransport) logoutHandler(c *gin.Context) {
+	jobName := c.Param("job")
+
+	job, err := h.agent.Store.GetJob(jobName, nil)
+	if err != nil {
+		_ = c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
+
+	// Toggle job status
+	job.Disabled = !job.Disabled
+
+	// Call gRPC SetJob
+	if err := h.agent.GRPCClient.SetJob(job); err != nil {
+		_ = c.AbortWithError(http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	c.Header("Location", c.Request.RequestURI)
+	renderJSON(c, http.StatusOK, job)
+}
+
+func (h *HTTPTransport) initHandler(c *gin.Context) {
+	jobName := c.Param("job")
+
+	job, err := h.agent.Store.GetJob(jobName, nil)
+	if err != nil {
+		_ = c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
+
+	// Toggle job status
+	job.Disabled = !job.Disabled
+
+	// Call gRPC SetJob
+	if err := h.agent.GRPCClient.SetJob(job); err != nil {
+		_ = c.AbortWithError(http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	c.Header("Location", c.Request.RequestURI)
+	renderJSON(c, http.StatusOK, job)
 }
