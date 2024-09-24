@@ -21,4 +21,11 @@ type Storage interface {
 	Shutdown() error
 	Snapshot(w io.WriteCloser) error
 	Restore(r io.ReadCloser) error
+	// User Login part
+	AddUser(name string, password string) error
+	DeleteUser(name string) error
+	GetUserWithPassword(name, password string) (bool, error)
+	AddSession(name string, jwtToken SessionToken) error
+	DeleteSession(name string, jwtToken SessionToken) error
+	GetSession(name string) (SessionToken, error)
 }
