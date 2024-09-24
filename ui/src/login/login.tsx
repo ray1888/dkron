@@ -42,7 +42,7 @@ export default function Login() {
           localStorage.setItem('access_token', access_token);
           localStorage.setItem('refresh_token', refresh_token);
           if (!err) {
-              window.location.href = redirect || getBaseUrl('/metric/explorer');
+              window.location.href = redirect || "/" ;
           }
       });
   };
