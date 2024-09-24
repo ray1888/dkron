@@ -10,12 +10,14 @@ require (
 	github.com/aws/aws-sdk-go v1.42.18 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/devopsfaith/krakend-usage v1.4.0
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fluent/fluent-logger-golang v1.9.0
 	github.com/fullstorydev/grpcurl v1.8.9
 	github.com/gin-contrib/cors v1.5.0
 	github.com/gin-contrib/expvar v1.0.1
 	github.com/gin-contrib/multitemplate v0.0.0-20211002122701-e9e3201b87a0
 	github.com/gin-gonic/gin v1.9.1
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang/protobuf v1.5.4
 	github.com/hashicorp/go-discover v0.0.0-20210818145131-c573d69da192
 	github.com/hashicorp/go-hclog v1.6.3
@@ -50,6 +52,7 @@ require (
 	github.com/tencentcloud/tencentcloud-sdk-go v3.0.83+incompatible // indirect
 	github.com/tidwall/buntdb v1.2.7
 	github.com/ugorji/go v1.2.7 // indirect
+	golang.org/x/crypto v0.23.0
 	golang.org/x/net v0.25.0
 	google.golang.org/grpc v1.62.1
 	google.golang.org/protobuf v1.33.1-0.20240408130810-98873a205002
