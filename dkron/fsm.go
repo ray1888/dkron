@@ -26,7 +26,7 @@ const (
 	// is done.
 	ExecutionDoneType
 	// Users Session
-	SetSessionType
+	SessionType
 	// user
 	UserType
 )
@@ -71,7 +71,7 @@ func (d *dkronFSM) Apply(l *raft.Log) interface{} {
 		return d.applyExecutionDone(buf[1:])
 	case SetExecutionType:
 		return d.applySetExecution(buf[1:])
-	case SetSessionType:
+	case SessionType:
 		return d.applySetSession(buf[1:])
 	case UserType:
 		return d.applySetUser(buf[1:])
@@ -138,29 +138,47 @@ func (d *dkronFSM) applySetExecution(buf []byte) interface{} {
 }
 
 func (d *dkronFSM) applySetSession(buf []byte) interface{} {
-	var pbex dkronpb.Execution
+	var pbex dkronpb.UserSessionModifyRequest
 	if err := proto.Unmarshal(buf, &pbex); err != nil {
 		return err
 	}
-	execution := NewExecutionFromProto(&pbex)
-	key, err := d.store.SetExecution(execution)
-	if err != nil {
-		return err
+	switch pbex.GetAction() {
+	case dkronpb.UserAction_Delete:
+		err := d.store.DeleteSession(pbex.GetUsername(), SessionToken{})
+		if err != nil {
+			return err
+		}
+	case dkronpb.UserAction_Add:
+		err := d.store.AddSession(pbex.GetUsername(), SessionToken{
+			Token: pbex.GetToken(),
+		})
+		if err != nil {
+			return err
+		}
 	}
-	return key
+
+	return nil
 }
 
 func (d *dkronFSM) applySetUser(buf []byte) interface{} {
-	var pbex dkronpb.Execution
+	var pbex dkronpb.UserModifyRequest
 	if err := proto.Unmarshal(buf, &pbex); err != nil {
 		return err
 	}
-	execution := NewExecutionFromProto(&pbex)
-	key, err := d.store.SetExecution(execution)
-	if err != nil {
-		return err
+	switch pbex.GetAction() {
+	case dkronpb.UserAction_Delete:
+		err := d.store.DeleteUser(pbex.GetUsername())
+		if err != nil {
+			return err
+		}
+		return nil
+	case dkronpb.UserAction_Add:
+		err := d.store.AddUser(pbex.GetUsername(), pbex.GetPassword())
+		if err != nil {
+			return err
+		}
 	}
-	return key
+	return nil
 }
 
 // Snapshot returns a snapshot of the key-value store. We wrap

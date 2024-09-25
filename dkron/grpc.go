@@ -425,53 +425,36 @@ func (grpcs *GRPCServer) SetExecution(ctx context.Context, execution *proto.Exec
 	return new(empty.Empty), nil
 }
 
-func (grpcs *GRPCServer) Login(ctx context.Context, execution *proto.AuthLoginRequest) (*proto.AuthLoginResponse, error) {
+func (grpcs *GRPCServer) Login(ctx context.Context, loginMsg *proto.AuthLoginRequest) (*proto.AuthLoginResponse, error) {
 	defer metrics.MeasureSince([]string{"grpc", "set_execution"}, time.Now())
 	grpcs.logger.WithFields(logrus.Fields{
-		"execution": execution.GetUsername(),
+		"execution": loginMsg.GetUsername(),
 	}).Debug("grpc: Received SetExecution")
 
-	cmd, err := Encode(SetSessionType, execution)
+	resp := new(proto.AuthLoginResponse)
+	canLogin, err := grpcs.agent.Store.GetUserWithPassword(loginMsg.GetUsername(), loginMsg.GetPassword())
 	if err != nil {
-		grpcs.logger.WithError(err).Fatal("agent: encode error in SetExecution")
-		return nil, err
+		resp.Success = false
+		resp.Msg = fmt.Sprintf("err is %v", err)
+		return resp, err
 	}
-	af := grpcs.agent.raft.Apply(cmd, raftTimeout)
-	if err := af.Error(); err != nil {
-		grpcs.logger.WithError(err).Fatal("agent: error applying SetExecutionType")
-		return nil, err
+	if !canLogin {
+		resp.Success = false
+		resp.Msg = "Invalid username or password"
+		return resp, errors.New("Invalid username or password")
 	}
 
-	return new(proto.AuthLoginResponse), nil
+	resp.Success = true
+	return resp, nil
 }
 
-func (grpcs *GRPCServer) Logout(ctx context.Context, execution *proto.AuthLogoutRequest) (*proto.AuthLogoutResponse, error) {
+func (grpcs *GRPCServer) UserAction(ctx context.Context, userModifyMsg *proto.UserModifyRequest) (*proto.UserModifyResponse, error) {
 	defer metrics.MeasureSince([]string{"grpc", "set_execution"}, time.Now())
 	grpcs.logger.WithFields(logrus.Fields{
-		"execution": execution.GetUsername(),
+		"execution": userModifyMsg.GetUsername(),
 	}).Debug("grpc: Received SetExecution")
 
-	cmd, err := Encode(SetSessionType, execution)
-	if err != nil {
-		grpcs.logger.WithError(err).Fatal("agent: encode error in SetExecution")
-		return nil, err
-	}
-	af := grpcs.agent.raft.Apply(cmd, raftTimeout)
-	if err := af.Error(); err != nil {
-		grpcs.logger.WithError(err).Fatal("agent: error applying SetExecutionType")
-		return nil, err
-	}
-
-	return new(proto.AuthLogoutResponse), nil
-}
-
-func (grpcs *GRPCServer) UserAction(ctx context.Context, execution *proto.UserModifyRequest) (*proto.UserModifyResponse, error) {
-	defer metrics.MeasureSince([]string{"grpc", "set_execution"}, time.Now())
-	grpcs.logger.WithFields(logrus.Fields{
-		"execution": execution.GetUsername(),
-	}).Debug("grpc: Received SetExecution")
-
-	cmd, err := Encode(UserType, execution)
+	cmd, err := Encode(UserType, userModifyMsg)
 	if err != nil {
 		grpcs.logger.WithError(err).Fatal("agent: encode error in SetExecution")
 		return nil, err
@@ -483,4 +466,26 @@ func (grpcs *GRPCServer) UserAction(ctx context.Context, execution *proto.UserMo
 	}
 
 	return new(proto.UserModifyResponse), nil
+}
+
+func (grpcs *GRPCServer) SessionAction(ctx context.Context, userSessionModifyMsg *proto.UserSessionModifyRequest) (*proto.UserSessionModifyResponse, error) {
+	defer metrics.MeasureSince([]string{"grpc", "set_execution"}, time.Now())
+	grpcs.logger.WithFields(logrus.Fields{
+		"execution": userSessionModifyMsg.GetUsername(),
+	}).Debug("grpc: Received Set Session Action. user %s, action is %v",
+		userSessionModifyMsg.GetUsername(), userSessionModifyMsg.GetAction(),
+	)
+
+	cmd, err := Encode(SessionType, userSessionModifyMsg)
+	if err != nil {
+		grpcs.logger.WithError(err).Fatal("agent: encode error in SetExecution")
+		return nil, err
+	}
+	af := grpcs.agent.raft.Apply(cmd, raftTimeout)
+	if err := af.Error(); err != nil {
+		grpcs.logger.WithError(err).Fatal("agent: error applying SetExecutionType")
+		return nil, err
+	}
+
+	return new(proto.UserSessionModifyResponse), nil
 }

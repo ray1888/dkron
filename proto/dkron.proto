@@ -169,6 +169,16 @@ message UserModifyResponse{
   string msg = 2;
 }
 
+message UserSessionModifyRequest{
+  string username = 1;
+  string token = 2;
+  UserAction action = 3;
+}
+
+message UserSessionModifyResponse{
+  bool success = 1;
+  string msg = 2;
+}
 
 service Dkron {
   rpc GetJob (GetJobRequest) returns (GetJobResponse);
@@ -185,6 +195,7 @@ service Dkron {
   rpc Login (AuthLoginRequest) returns (AuthLoginResponse);
   rpc Logout (AuthLogoutRequest) returns (AuthLogoutResponse);
   rpc UserAction(UserModifyRequest) returns (UserModifyResponse);
+  rpc SessionAction(UserSessionModifyRequest) returns (UserSessionModifyResponse);
 }
 
 message AgentRunRequest {

@@ -206,8 +206,21 @@ func (gRPCClientMock) RunJob(s string) (*Job, error)              { return nil, 
 func (gRPCClientMock) RaftGetConfiguration(s string) (*proto.RaftGetConfigurationResponse, error) {
 	return nil, nil
 }
-func (gRPCClientMock) Login(username, password string) error
-func (gRPCClientMock) Logout(username string) error
+func (gRPCClientMock) Login(username, password string) error {
+	return nil
+}
+
+func (gRPCClientMock) Logout(username string) error {
+	return nil
+}
+
+func (gRPCClientMock) SetSession(username string, token string, action int) error {
+	return nil
+}
+
+func (gRPCClientMock) SetUser(username string, encryptedPassword string, action int) error {
+	return nil
+}
 
 func (gRPCClientMock) RaftRemovePeerByID(s string, a string) error { return nil }
 func (gRPCClientMock) GetActiveExecutions(s string) ([]*proto.Execution, error) {

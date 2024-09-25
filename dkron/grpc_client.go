@@ -30,8 +30,11 @@ type DkronGRPCClient interface {
 	GetActiveExecutions(string) ([]*proto.Execution, error)
 	SetExecution(execution *proto.Execution) error
 	AgentRun(addr string, job *proto.Job, execution *proto.Execution) error
+	//
 	Login(username, password string) error
 	Logout(username string) error
+	SetSession(username string, token string, action proto.UserAction) error
+	SetUser(username string, encryptedPassword string, action int) error
 }
 
 // GRPCClient is the local implementation of the DkronGRPCClient interface.
@@ -165,8 +168,41 @@ func (grpcc *GRPCClient) Leave(addr string) error {
 	return nil
 }
 
-// TODO to finish this
-func (grpcc *GRPCClient) UserModify() error {
+func (grpcc *GRPCClient) SetSession(username string, token string, action proto.UserAction) error {
+	var conn *grpc.ClientConn
+
+	addr := grpcc.agent.raft.Leader()
+
+	// Initiate a connection with the server
+	conn, err := grpcc.Connect(string(addr))
+	if err != nil {
+		grpcc.logger.WithError(err).WithFields(logrus.Fields{
+			"method":      "Login",
+			"server_addr": addr,
+		}).Error("grpc: error dialing.")
+		return err
+	}
+	defer conn.Close()
+
+	// Synchronous call
+	d := proto.NewDkronClient(conn)
+	_, err = d.SessionAction(context.Background(), &proto.UserSessionModifyRequest{
+		Action:   proto.UserAction_Add,
+		Username: "test",
+		Token:    "test",
+	})
+	if err != nil {
+		grpcc.logger.WithError(err).WithFields(logrus.Fields{
+			"method":      "Login",
+			"server_addr": addr,
+		}).Error("grpc: Error calling gRPC method")
+		return err
+	}
+
+	return nil
+}
+
+func (grpcc *GRPCClient) SetUser(username string, encryptedPassword string, action int) error {
 	var conn *grpc.ClientConn
 
 	addr := grpcc.agent.raft.Leader()
@@ -186,8 +222,8 @@ func (grpcc *GRPCClient) UserModify() error {
 	d := proto.NewDkronClient(conn)
 	_, err = d.UserAction(context.Background(), &proto.UserModifyRequest{
 		Action:   proto.UserAction_Add,
-		Username: "test",
-		Password: "test",
+		Username: username,
+		Password: encryptedPassword,
 	})
 	if err != nil {
 		grpcc.logger.WithError(err).WithFields(logrus.Fields{
@@ -248,8 +284,9 @@ func (grpcc *GRPCClient) Logout(username string) error {
 
 	// Synchronous call
 	d := proto.NewDkronClient(conn)
-	_, err = d.Logout(context.Background(), &proto.AuthLogoutRequest{
+	_, err = d.SessionAction(context.Background(), &proto.UserSessionModifyRequest{
 		Username: username,
+		Action:   proto.UserAction_Delete,
 	})
 	if err != nil {
 		grpcc.logger.WithError(err).WithFields(logrus.Fields{

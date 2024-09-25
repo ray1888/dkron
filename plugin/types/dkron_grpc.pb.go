@@ -33,6 +33,7 @@ type DkronClient interface {
 	Login(ctx context.Context, in *AuthLoginRequest, opts ...grpc.CallOption) (*AuthLoginResponse, error)
 	Logout(ctx context.Context, in *AuthLogoutRequest, opts ...grpc.CallOption) (*AuthLogoutResponse, error)
 	UserAction(ctx context.Context, in *UserModifyRequest, opts ...grpc.CallOption) (*UserModifyResponse, error)
+	SessionAction(ctx context.Context, in *UserSessionModifyRequest, opts ...grpc.CallOption) (*UserSessionModifyResponse, error)
 }
 
 type dkronClient struct {
@@ -169,6 +170,15 @@ func (c *dkronClient) UserAction(ctx context.Context, in *UserModifyRequest, opt
 	return out, nil
 }
 
+func (c *dkronClient) SessionAction(ctx context.Context, in *UserSessionModifyRequest, opts ...grpc.CallOption) (*UserSessionModifyResponse, error) {
+	out := new(UserSessionModifyResponse)
+	err := c.cc.Invoke(ctx, "/types.Dkron/SessionAction", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DkronServer is the server API for Dkron service.
 // All implementations must embed UnimplementedDkronServer
 // for forward compatibility
@@ -187,6 +197,7 @@ type DkronServer interface {
 	Login(context.Context, *AuthLoginRequest) (*AuthLoginResponse, error)
 	Logout(context.Context, *AuthLogoutRequest) (*AuthLogoutResponse, error)
 	UserAction(context.Context, *UserModifyRequest) (*UserModifyResponse, error)
+	SessionAction(context.Context, *UserSessionModifyRequest) (*UserSessionModifyResponse, error)
 	mustEmbedUnimplementedDkronServer()
 }
 
@@ -235,6 +246,9 @@ func (UnimplementedDkronServer) Logout(context.Context, *AuthLogoutRequest) (*Au
 }
 func (UnimplementedDkronServer) UserAction(context.Context, *UserModifyRequest) (*UserModifyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserAction not implemented")
+}
+func (UnimplementedDkronServer) SessionAction(context.Context, *UserSessionModifyRequest) (*UserSessionModifyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SessionAction not implemented")
 }
 func (UnimplementedDkronServer) mustEmbedUnimplementedDkronServer() {}
 
@@ -501,6 +515,24 @@ func _Dkron_UserAction_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Dkron_SessionAction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserSessionModifyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DkronServer).SessionAction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/types.Dkron/SessionAction",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DkronServer).SessionAction(ctx, req.(*UserSessionModifyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Dkron_ServiceDesc is the grpc.ServiceDesc for Dkron service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -563,6 +595,10 @@ var Dkron_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UserAction",
 			Handler:    _Dkron_UserAction_Handler,
+		},
+		{
+			MethodName: "SessionAction",
+			Handler:    _Dkron_SessionAction_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

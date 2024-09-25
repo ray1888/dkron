@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/distribworks/dkron/v3/dkron/model"
+	dkronpb "github.com/distribworks/dkron/v3/plugin/types"
 )
 
 type Response struct {
@@ -39,7 +40,7 @@ func (h *HTTPTransport) loginHandler(c *gin.Context) {
 
 	// Call gRPC Login
 	if err := h.agent.GRPCClient.Login(loginRequest.Username, password); err != nil {
-		_ = c.AbortWithError(http.StatusUnprocessableEntity, err)
+		_ = c.AbortWithError(http.StatusTemporaryRedirect, err)
 		return
 	}
 
@@ -52,6 +53,13 @@ func (h *HTTPTransport) loginHandler(c *gin.Context) {
 	if err != nil {
 		return
 	}
+
+	// Call Set Token to storage
+	if err := h.agent.GRPCClient.SetSession(loginRequest.Username, tokenString, dkronpb.UserAction_Add); err != nil {
+		_ = c.AbortWithError(http.StatusUnprocessableEntity, err)
+		return
+	}
+
 	// TODO set cookie maybe need to debug
 	c.SetCookie("dkron-user-token", tokenString, 3600, "/", "localhost", false, true)
 	renderJSON(c, http.StatusOK, resp)
