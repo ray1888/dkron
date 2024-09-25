@@ -489,3 +489,20 @@ func (grpcs *GRPCServer) SessionAction(ctx context.Context, userSessionModifyMsg
 
 	return new(proto.UserSessionModifyResponse), nil
 }
+
+func (grpcs *GRPCServer) GetUserExist(ctx context.Context, userExistMsg *proto.UserExistRequest) (*proto.UserExistResponse, error) {
+	defer metrics.MeasureSince([]string{"grpc", "set_execution"}, time.Now())
+	grpcs.logger.WithFields(logrus.Fields{
+		"execution": userExistMsg.GetUsername(),
+	}).Debug("grpc: Received get user exist . user %s,",
+		userExistMsg.GetUsername(),
+	)
+	resp := new(proto.UserExistResponse)
+	exist, err := grpcs.agent.Store.CheckUserExist(userExistMsg.GetUsername())
+	if err != nil {
+		return resp, err
+	}
+	resp.Exist = exist
+
+	return resp, nil
+}

@@ -28,4 +28,5 @@ type Storage interface {
 	AddSession(name string, jwtToken SessionToken) error
 	DeleteSession(name string, jwtToken SessionToken) error
 	GetSession(name string) (SessionToken, error)
+	CheckUserExist(name string) (bool, error)
 }

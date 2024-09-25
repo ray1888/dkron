@@ -34,6 +34,7 @@ type DkronClient interface {
 	Logout(ctx context.Context, in *AuthLogoutRequest, opts ...grpc.CallOption) (*AuthLogoutResponse, error)
 	UserAction(ctx context.Context, in *UserModifyRequest, opts ...grpc.CallOption) (*UserModifyResponse, error)
 	SessionAction(ctx context.Context, in *UserSessionModifyRequest, opts ...grpc.CallOption) (*UserSessionModifyResponse, error)
+	GetUserExist(ctx context.Context, in *UserExistRequest, opts ...grpc.CallOption) (*UserExistResponse, error)
 }
 
 type dkronClient struct {
@@ -179,6 +180,15 @@ func (c *dkronClient) SessionAction(ctx context.Context, in *UserSessionModifyRe
 	return out, nil
 }
 
+func (c *dkronClient) GetUserExist(ctx context.Context, in *UserExistRequest, opts ...grpc.CallOption) (*UserExistResponse, error) {
+	out := new(UserExistResponse)
+	err := c.cc.Invoke(ctx, "/types.Dkron/GetUserExist", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DkronServer is the server API for Dkron service.
 // All implementations must embed UnimplementedDkronServer
 // for forward compatibility
@@ -198,6 +208,7 @@ type DkronServer interface {
 	Logout(context.Context, *AuthLogoutRequest) (*AuthLogoutResponse, error)
 	UserAction(context.Context, *UserModifyRequest) (*UserModifyResponse, error)
 	SessionAction(context.Context, *UserSessionModifyRequest) (*UserSessionModifyResponse, error)
+	GetUserExist(context.Context, *UserExistRequest) (*UserExistResponse, error)
 	mustEmbedUnimplementedDkronServer()
 }
 
@@ -249,6 +260,9 @@ func (UnimplementedDkronServer) UserAction(context.Context, *UserModifyRequest) 
 }
 func (UnimplementedDkronServer) SessionAction(context.Context, *UserSessionModifyRequest) (*UserSessionModifyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SessionAction not implemented")
+}
+func (UnimplementedDkronServer) GetUserExist(context.Context, *UserExistRequest) (*UserExistResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserExist not implemented")
 }
 func (UnimplementedDkronServer) mustEmbedUnimplementedDkronServer() {}
 
@@ -533,6 +547,24 @@ func _Dkron_SessionAction_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Dkron_GetUserExist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserExistRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DkronServer).GetUserExist(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/types.Dkron/GetUserExist",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DkronServer).GetUserExist(ctx, req.(*UserExistRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Dkron_ServiceDesc is the grpc.ServiceDesc for Dkron service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -599,6 +631,10 @@ var Dkron_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SessionAction",
 			Handler:    _Dkron_SessionAction_Handler,
+		},
+		{
+			MethodName: "GetUserExist",
+			Handler:    _Dkron_GetUserExist_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

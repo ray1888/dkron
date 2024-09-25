@@ -214,11 +214,13 @@ func (gRPCClientMock) Logout(username string) error {
 	return nil
 }
 
-func (gRPCClientMock) SetSession(username string, token string, action int) error {
+func (gRPCClientMock) GetUserExist(username string) (bool, error)
+
+func (gRPCClientMock) SetSession(username string, token string, action proto.UserAction) error {
 	return nil
 }
 
-func (gRPCClientMock) SetUser(username string, encryptedPassword string, action int) error {
+func (gRPCClientMock) SetUser(username string, encryptedPassword string, action proto.UserAction) error {
 	return nil
 }
 

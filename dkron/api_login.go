@@ -83,24 +83,41 @@ func (h *HTTPTransport) logoutHandler(c *gin.Context) {
 	renderJSON(c, http.StatusOK, resp)
 }
 
-// func (h *HTTPTransport) initHandler(c *gin.Context) {
-// 	jobName := c.Param("job")
+func (h *HTTPTransport) initHandler(c *gin.Context) {
+	var loginRequest model.User
+	var resp Response
+	if err := c.BindJSON(&loginRequest); err != nil {
+		_, _ = c.Writer.WriteString(fmt.Sprintf("Unable to parse payload: %s.", err))
+		h.logger.Error(err)
+		resp.Code = 1001
+		resp.Msg = "Unable to addUser , invalid request body"
+		renderJSON(c, http.StatusForbidden, resp)
+		return
+	}
 
-// 	job, err := h.agent.Store.GetJob(jobName, nil)
-// 	if err != nil {
-// 		_ = c.AbortWithError(http.StatusNotFound, err)
-// 		return
-// 	}
+	password, err := hashPassword(loginRequest.Password)
+	if err != nil {
+		h.logger.Error(err)
+		resp.Code = 1002
+		resp.Msg = fmt.Sprintf("encrypt password failed, err is %v", err)
+		renderJSON(c, http.StatusForbidden, resp)
+		return
+	}
 
-// 	// Toggle job status
-// 	job.Disabled = !job.Disabled
+	exist, err := h.agent.GRPCClient.GetUserExist(loginRequest.Username)
+	if err != nil {
+		_ = c.AbortWithError(http.StatusUnprocessableEntity, err)
+		return
+	}
+	if exist {
+		renderJSON(c, http.StatusForbidden, resp)
+		return
+	}
 
-// 	// Call gRPC UserModify
-// 	if err := h.agent.GRPCClient.UserModify(job); err != nil {
-// 		_ = c.AbortWithError(http.StatusUnprocessableEntity, err)
-// 		return
-// 	}
+	if err := h.agent.GRPCClient.SetUser(loginRequest.Username, password, dkronpb.UserAction_Add); err != nil {
+		_ = c.AbortWithError(http.StatusUnprocessableEntity, err)
+		return
+	}
 
-// 	c.Header("Location", c.Request.RequestURI)
-// 	renderJSON(c, http.StatusOK, job)
-// }
+	renderJSON(c, http.StatusOK, resp)
+}

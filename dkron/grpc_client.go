@@ -34,7 +34,8 @@ type DkronGRPCClient interface {
 	Login(username, password string) error
 	Logout(username string) error
 	SetSession(username string, token string, action proto.UserAction) error
-	SetUser(username string, encryptedPassword string, action int) error
+	SetUser(username string, encryptedPassword string, action proto.UserAction) error
+	GetUserExist(username string) (bool, error)
 }
 
 // GRPCClient is the local implementation of the DkronGRPCClient interface.
@@ -202,7 +203,7 @@ func (grpcc *GRPCClient) SetSession(username string, token string, action proto.
 	return nil
 }
 
-func (grpcc *GRPCClient) SetUser(username string, encryptedPassword string, action int) error {
+func (grpcc *GRPCClient) SetUser(username string, encryptedPassword string, action proto.UserAction) error {
 	var conn *grpc.ClientConn
 
 	addr := grpcc.agent.raft.Leader()
@@ -221,7 +222,7 @@ func (grpcc *GRPCClient) SetUser(username string, encryptedPassword string, acti
 	// Synchronous call
 	d := proto.NewDkronClient(conn)
 	_, err = d.UserAction(context.Background(), &proto.UserModifyRequest{
-		Action:   proto.UserAction_Add,
+		Action:   action,
 		Username: username,
 		Password: encryptedPassword,
 	})
@@ -264,6 +265,37 @@ func (grpcc *GRPCClient) Login(username, password string) error {
 	}
 
 	return nil
+}
+
+func (grpcc *GRPCClient) GetUserExist(username string) (bool, error) {
+	var conn *grpc.ClientConn
+
+	addr := grpcc.agent.raft.Leader()
+
+	// Initiate a connection with the server
+	conn, err := grpcc.Connect(string(addr))
+	if err != nil {
+		grpcc.logger.WithError(err).WithFields(logrus.Fields{
+			"method":      "Login",
+			"server_addr": addr,
+		}).Error("grpc: error dialing.")
+		return false, err
+	}
+	defer conn.Close()
+
+	// Synchronous call
+	d := proto.NewDkronClient(conn)
+	exist, err := d.GetUserExist(context.Background(), &proto.UserExistRequest{
+		Username: username,
+	})
+	if err != nil {
+		grpcc.logger.WithError(err).WithFields(logrus.Fields{
+			"method":      "Login",
+			"server_addr": addr,
+		}).Error("grpc: Error calling gRPC method")
+		return false, err
+	}
+	return exist.GetExist(), nil
 }
 
 func (grpcc *GRPCClient) Logout(username string) error {

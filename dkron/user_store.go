@@ -87,20 +87,28 @@ func (s *Store) deleteUserTxFunc(username string) func(tx *buntdb.Tx) error {
 }
 
 func (s *Store) getUser(name string) (*UserEncryptPass, error) {
-	var uep UserEncryptPass
-	err := s.db.View(s.getUserTxFunc(name, &uep))
+	uep := new(UserEncryptPass)
+	err := s.db.View(s.getUserTxFunc(name, uep))
 	if err != nil {
-		return &uep, err
+		return uep, err
 	}
+	return uep, nil
+}
+
+func (s *Store) CheckUserExist(name string) (bool, error) {
+	data, err := s.getUser(name)
 	if err != nil {
-		return &uep, err
+		return false, err
 	}
-	return &uep, nil
+	if data != nil {
+		return true, nil
+	}
+	return false, nil
 }
 
 func (s *Store) GetUserWithPassword(name, password string) (bool, error) {
 	data, err := s.getUser(name)
-	if err != nil {
+	if err != nil || data == nil {
 		return false, err
 	}
 	if data.EncrtpyPass != password {
