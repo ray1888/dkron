@@ -180,6 +180,16 @@ message UserSessionModifyResponse{
   string msg = 2;
 }
 
+message UserExistRequest{
+  string username = 1;
+}
+
+message UserExistResponse{
+  bool exist = 1;
+  string msg = 2;
+}
+
+
 service Dkron {
   rpc GetJob (GetJobRequest) returns (GetJobResponse);
   rpc ExecutionDone (ExecutionDoneRequest) returns (ExecutionDoneResponse);
@@ -196,6 +206,7 @@ service Dkron {
   rpc Logout (AuthLogoutRequest) returns (AuthLogoutResponse);
   rpc UserAction(UserModifyRequest) returns (UserModifyResponse);
   rpc SessionAction(UserSessionModifyRequest) returns (UserSessionModifyResponse);
+  rpc GetUserExist(UserExistRequest) returns (UserExistResponse);
 }
 
 message AgentRunRequest {
